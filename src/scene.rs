@@ -31,7 +31,7 @@ impl Scene {
             },
             objects: vec![],
             lights: vec![],
-            bg_color: vec![0.2, 0.7, 0.8]
+            bg_color: vec![0.2, 0.2, 0.2]
         }
     }
     
