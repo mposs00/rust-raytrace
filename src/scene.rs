@@ -2,6 +2,7 @@ use crate::object::*;
 use crate::ppm::Frame;
 use crate::vector;
 use crate::light::Light;
+use std::collections::HashMap;
 
 pub struct Camera {
     pub width: usize,
@@ -34,24 +35,27 @@ impl Scene {
         }
     }
     
-    fn scene_intersect(&mut self, origin: &Vec<f32>, direction: &Vec<f32>) -> (bool, Vec<f32>, Vec<f32>, Material) {
+    fn scene_intersect(&self, origin: &Vec<f32>, direction: &Vec<f32>) -> (bool, Vec<f32>, Vec<f32>, Material) {
         let mut dist: f32 = f32::MAX;
         let mut mtrl = Material {
-            diffuse_color: vec![]
+            diffuse_color: vec![],
+            specular_color: vec![],
+            specular_exp: 0.
         };
         let mut hit: Vec<f32> = vec![];
         let mut n: Vec<f32> = vec![];
         for obj in &self.objects {
             let mut dist_i: f32 = dist;
             let intersection = obj.ray_intersect(origin, direction);
-            dist_i = intersection.1;
-            if intersection.0 && dist_i < dist {
+            dist_i = intersection.distance;
+            if intersection.did_intersect && dist_i < dist {
                 dist = dist_i;
-                hit = vector::add_vector(origin, &vector::scale(&direction, dist_i));
-                n = vector::normalize(&vector::sub_vector(&hit, &obj.get_center()));
+                hit = intersection.intersect_point;
+                n = intersection.normal;
                 mtrl = obj.get_material();
             }
         }
+        //println!("distance to obj: {}", dist);
         (dist < 1000., hit, n, mtrl)
     }
 
@@ -59,11 +63,31 @@ impl Scene {
         let intersection = self.scene_intersect(origin, direction);
         if intersection.0 {
             let mut diffuse_intensity: f32 = 0.;
+            let mut specular_intensity: f32 = 0.;
             for light in &self.lights {
                 let light_dir = vector::normalize(&vector::sub_vector(&light.position, &intersection.1));
+                let light_dist: f32 = vector::norm(&vector::sub_vector(&light.position, &intersection.1));
+
+                let mut shadow_origin: Vec<f32> = vec![];
+                if vector::dot_product(&light_dir, &intersection.2) < 0. {
+                    shadow_origin = vector::sub_vector(&intersection.1, &vector::scale(&intersection.2, 0.0001));
+                }
+                else {
+                    shadow_origin = vector::add_vector(&intersection.1, &vector::scale(&intersection.2, 0.0001));
+                }
+                let shadow_intersection = self.scene_intersect(&shadow_origin, &light_dir);
+                if shadow_intersection.0 && vector::norm(&vector::sub_vector(&shadow_intersection.1, &shadow_origin)) < light_dist {
+                    continue;
+                }
+
                 diffuse_intensity += light.intensity * f32::max(0., vector::dot_product(&light_dir, &intersection.2));
+                specular_intensity += f32::max(0., vector::dot_product(&vector::reflect(&light_dir, &intersection.2), direction)).powf(intersection.3.specular_exp) * light.intensity;
+                //println!("dot product of light dir and surface normal: {}", vector::dot_product(&light_dir, &intersection.2));
+                //println!("diffuse intensity: {}", diffuse_intensity);
             }
-            return vector::scale(&intersection.3.diffuse_color, diffuse_intensity);
+            let diffuse_component = vector::scale(&intersection.3.diffuse_color, diffuse_intensity);
+            let specular_component = vector::scale(&intersection.3.specular_color, specular_intensity);
+            return vector::add_vector(&diffuse_component, &specular_component)
         }
         self.bg_color.clone()
     }

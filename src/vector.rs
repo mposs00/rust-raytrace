@@ -21,3 +21,13 @@ pub fn normalize(vector: &Vec<f32>) -> Vec<f32> {
 pub fn scale(vector: &Vec<f32>, scale: f32) -> Vec<f32> {
     vector.iter().map(|c| c * scale).collect()
 }
+
+pub fn reflect(i: &Vec<f32>, n: &Vec<f32>) -> Vec<f32> {
+    let i_dot_n = dot_product(i, n) * 2.;
+    sub_vector(i, &scale(n, i_dot_n))
+}
+
+// THIS ONLY WORKS ON 3D VECTORS LOL
+pub fn norm(v: &Vec<f32>) -> f32 {
+    v.iter().map(|c| c * c * c).sum::<f32>().cbrt()
+}
