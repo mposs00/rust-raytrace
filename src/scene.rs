@@ -6,7 +6,6 @@ use crate::threads::ThreadPool;
 use std::collections::HashMap;
 use std::sync::mpsc;
 
-#[derive(Clone)]
 pub struct Camera {
     pub width: usize,
     pub height: usize,
@@ -15,7 +14,6 @@ pub struct Camera {
     pub frame: Frame
 }
 
-#[derive(Clone)]
 pub struct Scene {
     pub camera: Camera,
     pub objects: Vec<Box<dyn Object>>,
@@ -63,12 +61,12 @@ impl Scene {
         (dist < 1000., hit, n, mtrl)
     }
 
-    fn cast_ray(scene: &Scene, origin: &Vec<f32>, direction: &Vec<f32>) -> Vec<f32> {
-        let intersection = Scene::scene_intersect(&scene, origin, direction);
+    fn cast_ray(&self, origin: &Vec<f32>, direction: &Vec<f32>) -> Vec<f32> {
+        let intersection = self.scene_intersect(origin, direction);
         if intersection.0 {
             let mut diffuse_intensity: f32 = 0.;
             let mut specular_intensity: f32 = 0.;
-            for light in &scene.lights {
+            for light in &self.lights {
                 let light_dir = vector::normalize(&vector::sub_vector(&light.position, &intersection.1));
                 let light_dist: f32 = vector::norm(&vector::sub_vector(&light.position, &intersection.1));
 
@@ -79,7 +77,7 @@ impl Scene {
                 else {
                     shadow_origin = vector::add_vector(&intersection.1, &vector::scale(&intersection.2, 0.0001));
                 }
-                let shadow_intersection = scene.scene_intersect(&shadow_origin, &light_dir);
+                let shadow_intersection = self.scene_intersect(&shadow_origin, &light_dir);
                 if shadow_intersection.0 && vector::norm(&vector::sub_vector(&shadow_intersection.1, &shadow_origin)) < light_dist {
                     continue;
                 }
@@ -93,7 +91,7 @@ impl Scene {
             let specular_component = vector::scale(&intersection.3.specular_color, specular_intensity);
             return vector::add_vector(&diffuse_component, &specular_component)
         }
-        scene.bg_color.clone()
+        self.bg_color.clone()
     }
 
     pub fn add_object(&mut self, obj_box: Box<dyn Object>) {
@@ -111,17 +109,13 @@ impl Scene {
             for i in 0..self.camera.width {
                 let x: f32 =  (2.*(i as f32 + 0.5)/self.camera.width as f32  - 1.)*f32::tan(self.camera.fov_deg.to_radians()/2.)*self.camera.width as f32/self.camera.height as f32;
                 let y: f32 = -(2.*(j as f32 + 0.5)/self.camera.height as f32 - 1.)*f32::tan(self.camera.fov_deg.to_radians()/2.);
-                
-                
-                let self_clone: Scene = self.clone();
-                
-                pool.execute(move || {
-                    let direction: Vec<f32> = vector::normalize(&vec![x, y, -1.]);
-                    let casted_color = Scene::cast_ray(&self_clone, &self_clone.camera.pos, &direction);
-                    println!("we got a color back but cannot put it anywhere x:{} y:{}", i, j);
-                });
 
-                //self.camera.frame.set_pixel_rgb(i, j, &casted_color);
+                //pool.execute(move || {
+                    let direction: Vec<f32> = vector::normalize(&vec![x, y, -1.]);
+                    let casted_color = self.cast_ray(&self.camera.pos, &direction);
+                //});
+
+                self.camera.frame.set_pixel_rgb(i, j, &casted_color);
             }
         }
     }
