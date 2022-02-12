@@ -3,6 +3,7 @@ mod object;
 mod ppm;
 mod vector;
 mod light;
+mod threads;
 use scene::*;
 
 fn main() {
@@ -14,7 +15,7 @@ fn main() {
     });
 
     scene.add_light(light::Light {
-        position: vec![0.0, 0.0, 0.0],
+        position: vec![-10.0, -12.0, 0.0],
         intensity: 1.,
     });
 
@@ -22,9 +23,9 @@ fn main() {
         for y in (-3..=3).step_by(2) {
             let dist: f32 = (y as f32 * 4.) + x as f32 * -1.;
             scene.add_object(Box::new(object::Sphere {
-                center: vec![x as f32 * 1.5, y as f32 * 1.25, -20. + dist],
+                center: vec![x as f32 * 1.5, y as f32 * 1.25, -25. + dist],
                 material: object::Material {
-                    diffuse_color: vec![0.4, 0.4, 0.3],
+                    diffuse_color: vec![0.15, 0.15, 0.25],
                     specular_color: vec![1., 1., 1.],
                     specular_exp: 100.
                 },

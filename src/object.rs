@@ -1,23 +1,45 @@
 use crate::vector;
 
+#[derive(Clone)]
 pub struct Material {
     pub diffuse_color: Vec<f32>,
     pub specular_color: Vec<f32>,
     pub specular_exp: f32
 }
 
-pub trait Object {
+pub trait Object : Send + Sync + ObjectClone {
     fn ray_intersect(&self, origin: &Vec<f32>, direction: &Vec<f32>) -> RayIntersection;
     fn get_center(&self) -> Vec<f32>;
     fn get_material(&self) -> Material;
 }
 
+trait ObjectClone {
+    fn clone_box(&self) -> Box<dyn Object>;
+}
+
+impl<T> ObjectClone for T
+where
+    T: 'static + Object + Clone,
+{
+    fn clone_box(&self) -> Box<dyn Object> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn Object> {
+    fn clone(&self) -> Box<dyn Object> {
+        self.clone_box()
+    }
+}
+
+#[derive(Clone)]
 pub struct Sphere {
     pub center: Vec<f32>,
     pub radius: f32,
     pub material: Material
 }
 
+#[derive(Clone)]
 pub struct Plane {
     pub center: Vec<f32>,
     pub normal: Vec<f32>,

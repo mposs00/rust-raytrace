@@ -3,10 +3,11 @@ use std::io::prelude::*;
 
 pub type FrameBuffer = Vec<Vec<[f32; 3]>>;
 
+#[derive(Clone)]
 pub struct Frame {
-    frame: FrameBuffer,
-    width: usize,
-    height: usize
+    pub frame: FrameBuffer,
+    pub width: usize,
+    pub height: usize
 }
 
 impl Frame {
