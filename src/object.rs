@@ -6,7 +6,7 @@ pub struct Material {
     pub specular_exp: f32
 }
 
-pub trait Object : Send + Sync {
+pub trait Object : Send + Sync + Clone {
     fn ray_intersect(&self, origin: &Vec<f32>, direction: &Vec<f32>) -> RayIntersection;
     fn get_center(&self) -> Vec<f32>;
     fn get_material(&self) -> Material;

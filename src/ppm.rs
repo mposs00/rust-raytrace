@@ -3,6 +3,7 @@ use std::io::prelude::*;
 
 pub type FrameBuffer = Vec<Vec<[f32; 3]>>;
 
+#[derive(Clone)]
 pub struct Frame {
     pub frame: FrameBuffer,
     pub width: usize,
@@ -16,10 +17,6 @@ impl Frame {
             width: width,
             height: height
         }
-    }
-
-    pub fn set_pixel(&mut self, x: usize, y: usize, r: f32, g: f32, b:f32) {
-        self.frame[y][x] = [r, g, b];
     }
 
     pub fn set_pixel_rgb(&mut self, x: usize, y: usize, rgb: &Vec<f32>) {
